@@ -94,10 +94,10 @@ export class UsersQuerySqlRepository {
   ) {
     const { sortBy, sortDirection, pageSize, pageNumber } = paginatorParams;
     let searchString = '';
-    if (searchLoginTerm) searchString += `login LIKE '%${searchLoginTerm}%' `;
+    if (searchLoginTerm) searchString += `login ILIKE '%${searchLoginTerm}%' `;
     if (searchEmailTerm) {
       if (searchLoginTerm) searchString += 'OR ';
-      searchString += `email LIKE '%${searchEmailTerm}%' `;
+      searchString += `email ILIKE '%${searchEmailTerm}%' `;
     }
     let banSearchParam = '';
     if (banStatus === 'banned') {
@@ -113,6 +113,7 @@ export class UsersQuerySqlRepository {
     if (!searchString && banSearchParam) {
       searchString = `WHERE ${banSearchParam}`;
     }
+    console.log(searchString);
     const totalCount = await this.dataSource.query(`
     SELECT COUNT(*)
     FROM users
