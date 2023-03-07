@@ -20,7 +20,6 @@ export class CreateNewUserUseCase
     private readonly usersService: UsersService,
   ) {}
   async execute(command: CreateNewUserCommand) {
-    console.log('!');
     const { userInputModel } = command;
     const { login, email, password } = userInputModel;
     const passwordSalt = await this.usersService.getPasswordSalt();
