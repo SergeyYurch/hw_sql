@@ -24,7 +24,6 @@ export class UsersQuerySqlRepository {
   }
 
   async findUserByLoginOrEmail(loginOrEmail: string) {
-    debugger;
     const conditionString = `users.email='${loginOrEmail}' OR users.login='${loginOrEmail}'`;
     return await this.findOne(conditionString);
   }
@@ -69,8 +68,9 @@ export class UsersQuerySqlRepository {
   }
 
   async findOne(conditionString: string) {
-    console.log('find one');
-    const queryString = `
+    try {
+      console.log('find one');
+      const queryString = `
       SELECT users.*, 
       ec."confirmationCode",ec."dateSendingConfirmEmail", ec."expirationDate" AS "confirmationCodeExpirationDate", 
       bi."banDate", bi."banReason",
@@ -81,9 +81,12 @@ export class UsersQuerySqlRepository {
       LEFT JOIN "password_recovery_information" pr ON users.id=pr."userId"
       WHERE ${conditionString};
     `;
-    const users = await this.dataSource.query(queryString);
-    if (!users[0]) return null;
-    return this.castToUserEntity(users[0]);
+      const users = await this.dataSource.query(queryString);
+      if (!users[0]) return null;
+      return this.castToUserEntity(users[0]);
+    } catch (e) {
+      return null;
+    }
   }
 
   async find(
@@ -113,13 +116,14 @@ export class UsersQuerySqlRepository {
     if (!searchString && banSearchParam) {
       searchString = `WHERE ${banSearchParam}`;
     }
-    console.log(searchString);
-    const totalCount = await this.dataSource.query(`
+    try {
+      console.log(searchString);
+      const totalCount = await this.dataSource.query(`
     SELECT COUNT(*)
     FROM users
     ${searchString}
     `);
-    const queryString = `
+      const queryString = `
       SELECT users.*, 
       ec."confirmationCode",ec."dateSendingConfirmEmail", ec."expirationDate" as "confirmationCodeExpirationDate", 
       bi."banDate", bi."banReason",
@@ -133,12 +137,15 @@ export class UsersQuerySqlRepository {
       LIMIT ${pageSize}
       OFFSET ${pageSize * (pageNumber - 1)};
     `;
-    const users: UserSqlDataType[] = await this.dataSource.query(queryString);
-    const userEntities: UserEntity[] = [];
-    for (const user of users) {
-      userEntities.push(await this.castToUserEntity(user));
+      const users: UserSqlDataType[] = await this.dataSource.query(queryString);
+      const userEntities: UserEntity[] = [];
+      for (const user of users) {
+        userEntities.push(await this.castToUserEntity(user));
+      }
+      return { totalCount: +totalCount[0].count, userEntities };
+    } catch (e) {
+      return null;
     }
-    return { totalCount: +totalCount[0].count, userEntities };
   }
 
   async getUserById(id: string, withBanStatus?: boolean) {
@@ -238,7 +245,6 @@ export class UsersQuerySqlRepository {
       expirationDate: +userData.confirmationCodeExpirationDate || null,
       dateSendingConfirmEmail: +userData.dateSendingConfirmEmail || null,
     };
-    debugger;
     userEntity.passwordRecoveryInformation = {
       recoveryCode: userData.recoveryCode,
       expirationDate: +userData.recoveryPassCodeExpirationDate || null,
