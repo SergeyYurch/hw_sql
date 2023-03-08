@@ -34,13 +34,14 @@ import { RegistrationConfirmationCommand } from './providers/use-cases/registrat
 import { RegistrationEmailResendingCommand } from './providers/use-cases/registration-email-resending-use-case';
 import { PasswordRecoveryCommand } from './providers/use-cases/password-recovery-use-case';
 import { SetNewPasswordCommand } from './providers/use-cases/set-new-password-use-case';
+import { UsersQuerySqlRepository } from '../users/providers/users.query-sql.repository';
 
 @UseGuards(ThrottlerGuard)
 @Controller('auth')
 export class AuthController {
   constructor(
     private authService: AuthService,
-    private usersQueryRepository: UsersQueryRepository,
+    private usersQueryRepository: UsersQuerySqlRepository,
     private commandBus: CommandBus,
   ) {}
 

@@ -207,7 +207,6 @@ describe('CommentsController (e2e)', () => {
         password: 'password1',
       })
       .expect(200);
-    console.log('!!!!!!!!--1');
     cookies = result.get('Set-Cookie');
     refreshTokenUser1 =
       cookies[0]
@@ -444,6 +443,7 @@ describe('CommentsController (e2e)', () => {
         password: 'newPassword',
       })
       .expect(200);
+    accessTokenUser1 = result.body.accessToken;
   });
   it('POST:[HOST]/auth/login: should return code 401 when user login with old password', async () => {
     const result = await request(app.getHttpServer())
@@ -454,4 +454,20 @@ describe('CommentsController (e2e)', () => {
       })
       .expect(401);
   });
+
+  it('POST:[HOST]/auth/me: should return code 200 and users data', async () => {
+    await delay(10000);
+
+    const result = await request(app.getHttpServer())
+      .get('/auth/me')
+      .auth(accessTokenUser1, { type: 'bearer' })
+      .expect(200);
+    expect(result.body).toEqual({
+      login: 'user1',
+      email: 'email1@gmail.com',
+      userId: user1Id,
+    });
+  });
+
+  //
 });
