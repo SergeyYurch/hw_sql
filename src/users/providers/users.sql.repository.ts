@@ -104,6 +104,7 @@ export class UsersSqlRepository {
         await this.dataSource.query(queryString);
       } catch (e) {
         console.log(e);
+        return null;
       }
     }
 
@@ -124,6 +125,7 @@ export class UsersSqlRepository {
         return await this.dataSource.query(queryString);
       } catch (e) {
         console.log(e);
+        return null;
       }
     }
 
@@ -132,7 +134,7 @@ export class UsersSqlRepository {
         `SELECT * FROM password_recovery_information  WHERE "userId"=${user.id}`,
       );
       if (isExistRows.length < 1) {
-        return await this.insertPasswordRecoveryInfoRow(user);
+        await this.insertPasswordRecoveryInfoRow(user);
       }
       //update
       try {
@@ -140,10 +142,10 @@ export class UsersSqlRepository {
           passwordRecoveryInformationChanges,
         );
         const queryString = `UPDATE password_recovery_information SET ${changeString} WHERE "userId"=${user.id}`;
-        return await this.dataSource.query(queryString);
+        await this.dataSource.query(queryString);
       } catch (e) {
         console.log(e);
-        return;
+        return null;
       }
     }
 
@@ -152,7 +154,7 @@ export class UsersSqlRepository {
         `SELECT * FROM ban_info  WHERE "userId"=${user.id}`,
       );
       if (isExistRows.length < 1) {
-        return await this.insertBanInfoRow(user);
+        await this.insertBanInfoRow(user);
       }
       //update ban_info
       try {
@@ -163,7 +165,7 @@ export class UsersSqlRepository {
         await this.dataSource.query(queryString);
       } catch (e) {
         console.log(e);
-        return;
+        return null;
       }
     }
 
@@ -246,7 +248,10 @@ export class UsersSqlRepository {
         VALUES ('${banDate}', '${banReason}',  '${user.id}')
         `;
       await this.dataSource.query(queryString);
-    } catch (e) {}
+    } catch (e) {
+      console.log(e);
+      return null;
+    }
   }
 
   private async insertPasswordRecoveryInfoRow(user: UserEntity) {
@@ -260,6 +265,7 @@ export class UsersSqlRepository {
       await this.dataSource.query(queryString);
     } catch (e) {
       console.log(e);
+      return null;
     }
   }
 
@@ -276,6 +282,7 @@ export class UsersSqlRepository {
       );
     } catch (e) {
       console.log(e);
+      return null;
     }
   }
 
