@@ -1,5 +1,4 @@
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
-import { UsersRepository } from '../../../users/providers/users.repository';
 import { BadRequestException } from '@nestjs/common';
 import { PASSWORD_RECOVERY_CODE_MESSAGE } from '../../constants/auth.constant';
 import { UsersSqlRepository } from '../../../users/providers/users.sql.repository';
@@ -22,7 +21,6 @@ export class SetNewPasswordUseCase
 
   async execute(command: SetNewPasswordCommand) {
     const { recoveryCode, newPassword } = command;
-    debugger;
     const userModel =
       await this.userQueryRepository.findUserByPasswordRecoveryCode(
         recoveryCode,
