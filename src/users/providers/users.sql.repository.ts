@@ -46,7 +46,7 @@ export class UsersSqlRepository {
     const passwordRecoveryInformationChanges = [];
     const banInfoChanges = [];
 
-    //detect change accountData
+    //detect changes in accountData
     for (const key in user.accountData) {
       if (
         !(user.accountData[key] instanceof Date) &&
@@ -56,7 +56,7 @@ export class UsersSqlRepository {
       }
     }
 
-    //detect change emailConfirmation
+    //detect changes in emailConfirmation
     for (const key in user.emailConfirmation) {
       if (user.emailConfirmation[key] !== userFromDb.emailConfirmation[key]) {
         if (key === 'isConfirmed') {
@@ -69,7 +69,7 @@ export class UsersSqlRepository {
         });
       }
     }
-    //detect change passwordRecoveryInformation
+    //detect changes in passwordRecoveryInformation
     for (const key in user.passwordRecoveryInformation) {
       if (
         user.passwordRecoveryInformation[key] !==
@@ -82,7 +82,7 @@ export class UsersSqlRepository {
       }
     }
 
-    //detect change banInfo
+    //detect changes in banInfo
     for (const key in user.banInfo) {
       if (user.banInfo[key] !== userFromDb.banInfo[key]) {
         if (key === 'isBanned') {
@@ -97,10 +97,14 @@ export class UsersSqlRepository {
     }
 
     if (usersChanges.length > 0) {
-      //update
-      const changeString = this.getChangeQueryString(usersChanges);
-      const queryString = `UPDATE users SET ${changeString} WHERE users.id='${user.id}'`;
-      await this.dataSource.query(queryString);
+      //update users
+      try {
+        const changeString = this.getChangeQueryString(usersChanges);
+        const queryString = `UPDATE users SET ${changeString} WHERE users.id='${user.id}'`;
+        await this.dataSource.query(queryString);
+      } catch (e) {
+        console.log(e);
+      }
     }
 
     if (emailConfirmationChanges.length > 0) {
@@ -111,10 +115,16 @@ export class UsersSqlRepository {
       if (isExistRows.length < 1) {
         return await this.insertEmailConfirmationRow(user);
       }
-      //update
-      const changeString = this.getChangeQueryString(emailConfirmationChanges);
-      const queryString = `UPDATE email_confirmation SET ${changeString} WHERE "userId"=${user.id}`;
-      return await this.dataSource.query(queryString);
+      //update email_confirmation
+      try {
+        const changeString = this.getChangeQueryString(
+          emailConfirmationChanges,
+        );
+        const queryString = `UPDATE email_confirmation SET ${changeString} WHERE "userId"=${user.id}`;
+        return await this.dataSource.query(queryString);
+      } catch (e) {
+        console.log(e);
+      }
     }
 
     if (passwordRecoveryInformationChanges.length > 0) {
@@ -125,11 +135,16 @@ export class UsersSqlRepository {
         return await this.insertPasswordRecoveryInfoRow(user);
       }
       //update
-      const changeString = this.getChangeQueryString(
-        passwordRecoveryInformationChanges,
-      );
-      const queryString = `UPDATE password_recovery_information SET ${changeString} WHERE "userId"=${user.id}`;
-      return await this.dataSource.query(queryString);
+      try {
+        const changeString = this.getChangeQueryString(
+          passwordRecoveryInformationChanges,
+        );
+        const queryString = `UPDATE password_recovery_information SET ${changeString} WHERE "userId"=${user.id}`;
+        return await this.dataSource.query(queryString);
+      } catch (e) {
+        console.log(e);
+        return;
+      }
     }
 
     if (banInfoChanges.length > 0) {
@@ -139,10 +154,17 @@ export class UsersSqlRepository {
       if (isExistRows.length < 1) {
         return await this.insertBanInfoRow(user);
       }
-      //update
-      const changeString = this.getChangeQueryString(banInfoChanges);
-      const queryString = `UPDATE ban_info SET ${changeString} WHERE "userId"=${user.id}`;
-      await this.dataSource.query(queryString);
+      //update ban_info
+      try {
+        const changeString = this.getChangeQueryString(banInfoChanges);
+        console.log(banInfoChanges);
+        const queryString = `UPDATE ban_info SET ${changeString} WHERE "userId"=${user.id}`;
+        console.log(queryString);
+        await this.dataSource.query(queryString);
+      } catch (e) {
+        console.log(e);
+        return;
+      }
     }
 
     //deviceSession change
@@ -164,7 +186,6 @@ export class UsersSqlRepository {
     if (user.deviceSessions.length > 0) {
       await this.insertDeviceSessionRows(user);
     }
-
     return user.id;
   }
 
@@ -181,62 +202,81 @@ export class UsersSqlRepository {
   // }
 
   private async insertNewUser(user: UserEntity) {
-    const { accountData, emailConfirmation } = user;
-    const { login, email, passwordSalt, passwordHash, createdAt } = accountData;
-    const { isConfirmed } = emailConfirmation;
+    try {
+      const { accountData, emailConfirmation } = user;
+      const { login, email, passwordSalt, passwordHash, createdAt } =
+        accountData;
+      const { isConfirmed } = emailConfirmation;
 
-    const result = await this.dataSource.query(`
+      const result = await this.dataSource.query(`
     INSERT INTO users("login", "email", "passwordHash", "passwordSalt", "createdAt", "isConfirmed") 
     VALUES ('${login}', '${email}', '${passwordHash}', '${passwordSalt}','${createdAt}', '${isConfirmed}')
     RETURNING id
     `);
-    user.id = result[0].id;
-    if (user.emailConfirmation.confirmationCode)
-      await this.insertEmailConfirmationRow(user);
-    return user.id;
+      user.id = result[0].id;
+      if (user.emailConfirmation.confirmationCode)
+        await this.insertEmailConfirmationRow(user);
+      return user.id;
+    } catch (e) {
+      console.log(e);
+    }
   }
 
   private async insertEmailConfirmationRow(user: UserEntity) {
-    const { confirmationCode, expirationDate, dateSendingConfirmEmail } =
-      user.emailConfirmation;
-    const queryString = `
+    try {
+      const { confirmationCode, expirationDate, dateSendingConfirmEmail } =
+        user.emailConfirmation;
+      const queryString = `
         INSERT INTO email_confirmation 
             ("confirmationCode", "expirationDate", "dateSendingConfirmEmail", "userId")
         VALUES ('${confirmationCode}', '${expirationDate}', '${dateSendingConfirmEmail}', '${user.id}')
         `;
-    await this.dataSource.query(queryString);
+      await this.dataSource.query(queryString);
+    } catch (e) {
+      console.log(e);
+    }
   }
 
   private async insertBanInfoRow(user: UserEntity) {
-    const { banReason, banDate } = user.banInfo;
-    const queryString = `
+    try {
+      const { banReason, banDate } = user.banInfo;
+      const queryString = `
         INSERT INTO ban_info 
             ("banDate", "banReason", "userId")
         VALUES ('${banDate}', '${banReason}',  '${user.id}')
         `;
-    await this.dataSource.query(queryString);
+      await this.dataSource.query(queryString);
+    } catch (e) {}
   }
 
   private async insertPasswordRecoveryInfoRow(user: UserEntity) {
-    const { recoveryCode, expirationDate } = user.passwordRecoveryInformation;
-    const queryString = `
+    try {
+      const { recoveryCode, expirationDate } = user.passwordRecoveryInformation;
+      const queryString = `
         INSERT INTO password_recovery_information 
             ("recoveryCode", "expirationDate", "userId")
         VALUES ('${recoveryCode}', '${expirationDate}', '${user.id}')
         `;
-    await this.dataSource.query(queryString);
+      await this.dataSource.query(queryString);
+    } catch (e) {
+      console.log(e);
+    }
   }
 
   private async insertDeviceSessionRows(user: UserEntity) {
-    const sessions = user.deviceSessions;
-    const valuesArray = sessions.map(
-      (s) =>
-        `('${s.deviceId}', '${s.ip}', '${s.title}', '${user.id}', '${s.lastActiveDate}', '${s.expiresDate}')`,
-    );
-    const values = valuesArray.join(',');
-    await this.dataSource.query(
-      `INSERT INTO device_sessions ("deviceId", ip, title, "userId", "lastActiveDate", "expiresDate") VALUES ${values}`,
-    );
+    try {
+      const sessions = user.deviceSessions;
+      const valuesArray = sessions.map(
+        (s) =>
+          `('${s.deviceId}', '${s.ip}', '${s.title}', '${user.id}', '${s.lastActiveDate}', '${s.expiresDate}')`,
+      );
+      const values = valuesArray.join(',');
+      await this.dataSource.query(
+        `INSERT INTO device_sessions ("deviceId", ip, title, "userId", "lastActiveDate", "expiresDate") VALUES ${values}`,
+      );
+    } catch (e) {
+      console.log(e);
+    }
   }
 
   private getChangeQueryString(changes: { field: string; value: any }[]) {
