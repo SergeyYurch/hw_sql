@@ -1,8 +1,5 @@
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
-import { UsersRepository } from '../../../users/providers/users.repository';
 import { MailService } from '../../../common/mail.service/mail.service';
-import { BadRequestException } from '@nestjs/common';
-import { PASSWORD_RECOVERY_MESSAGE } from '../../constants/auth.constant';
 import { UsersQuerySqlRepository } from '../../../users/providers/users.query-sql.repository';
 import { UsersSqlRepository } from '../../../users/providers/users.sql.repository';
 export class PasswordRecoveryCommand {
@@ -23,7 +20,6 @@ export class PasswordRecoveryUseCase
     const userModel = await this.userQueryRepository.findUserByLoginOrEmail(
       email,
     );
-    debugger;
     if (!userModel) {
       return null;
     }
